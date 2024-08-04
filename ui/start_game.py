@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (
     QHBoxLayout
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont, QColor
+from PyQt5.QtGui import QFont
 
 
 class SecondWindow(QWidget):
