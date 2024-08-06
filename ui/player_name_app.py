@@ -121,3 +121,5 @@ class PlayerNameApp(QWidget):
         print(f"Selected players : {selected_player}")
         self.second_window = SecondWindow(selected_player)
         self.second_window.show()
+        self.second_window.showMaximized()
+        self.close()

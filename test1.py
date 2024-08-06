@@ -1,83 +1,80 @@
 import sys
+import pandas as pd
+import os
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QGridLayout, QLabel, QLineEdit, QPushButton, QFormLayout,
-    QHBoxLayout
+    QWidget, QLabel, QLineEdit, QPushButton, QFormLayout,
+    QHBoxLayout, QSplitter, QVBoxLayout, QApplication, QTableWidget,
+    QHeaderView, QTableWidgetItem
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont, QColor
+from PyQt5.QtGui import QFont
 
-class QuadrantWindow(QWidget):
+class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
 
-        # Set up the window
-        self.setWindowTitle("Enhanced Quadrant Layout")
-        self.setGeometry(100, 100, 800, 600)
+        # Create a vertical splitter
+        self.splitter = QSplitter(Qt.Horizontal)
 
-        # Create a grid layout
-        self.grid_layout = QGridLayout()
+        # Create the left part
+        left_widget = QWidget()
+        self.left_layout = QVBoxLayout()
+        left_widget.setLayout(self.left_layout)
+
+        # Initialize components for the left part
+        self.playArea()
+        self.scoreboard()
+
+        # Add widgets to the splitter
+        self.splitter.addWidget(left_widget)
+        # Create the right part with the scoreboard
+        self.table_widget = self.totalScore()
+
         
-        self.playArea() #form layout to the first quadrant
-        self.scoreArea() # Second Quadrant: Label
 
-        
-        # Third Quadrant: Label
-        label2 = QLabel("This is the third quadrant")
-        label2.setAlignment(Qt.AlignCenter)
-        label2.setStyleSheet("font-size: 18px; background-color: #f0f0f0; padding: 20px; border: 1px solid #ccc; border-radius: 10px;")
+        # Set the main layout
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(self.splitter)
+        self.setLayout(main_layout)
 
-        self.grid_layout.addWidget(label2, 1, 0)  # Row 1, Column 0
-
-        # Fourth Quadrant: Label
-        label3 = QLabel("This is the fourth quadrant")
-        label3.setAlignment(Qt.AlignCenter)
-        label3.setStyleSheet("font-size: 18px; background-color: #f0f0f0; padding: 20px; border: 1px solid #ccc; border-radius: 10px;")
-
-        self.grid_layout.addWidget(label3, 1, 1)  # Row 1, Column 1
-
-        # Set the layout for the main window
-        self.setLayout(self.grid_layout)
-
-        # Set a main window background color
-        self.setStyleSheet("background-color: #e0e0e0;")
+        # Set the window title and size
+        self.setWindowTitle("Split Layout Example")
+        self.resize(800, 600)
 
     def playArea(self):
         form_layout = QFormLayout()
-        #form_layout.setContentsMargins(20, 20, 20, 20)  # Add margins to the layout
-        #form_layout.setSpacing(15)  # Set spacing between rows
         font = QFont("Arial", 12)
-        submit_button = QPushButton("Submit")
-        # Add rows to the form layout
-        player_names = ['Player 1', 'Player 2', 'Player 3', 'Player 4']
-        self.name_inputs = []  # Store input fields for later use
-        for player in player_names:
+
+        # Store input fields for later use
+        self.name_inputs = []
+        selected_players = ['Kausar', 'abc', 5, 6, 9, 8, 9, 9]
+
+        for player in selected_players:
             name_input = QLineEdit()
             name_input.setStyleSheet("""
-    QLineEdit {
-        background-color: #ffffff; /* White background */
-        border: 2px solid #ccc; /* Light gray border */
-        border-radius: 5px; /* Rounded corners */
-        padding: 10px; /* Padding inside the input */
-        font-size: 14px; /* Font size */
-        color: #333; /* Text color */
-    }
-    
-    QLineEdit:focus {
-        border: 2px solid #4CAF50; /* Green border when focused */
-        background-color: #f9f9f9; /* Slightly darker background when focused */
-    }
-    
-    QLineEdit::placeholder {
-        color: #aaa; /* Placeholder text color */
-        font-style: italic; /* Italicize placeholder text */
-    }
-""")
+                QLineEdit {
+                    background-color: #ffffff; /* White background */
+                    border: 2px solid #ccc; /* Light gray border */
+                    border-radius: 5px; /* Rounded corners */
+                    padding: 10px; /* Padding inside the input */
+                    font-size: 14px; /* Font size */
+                    color: #333; /* Text color */
+                }
+                
+                QLineEdit:focus {
+                    border: 2px solid #4CAF50; /* Green border when focused */
+                    background-color: #f9f9f9; /* Slightly darker background when focused */
+                }
+                
+                QLineEdit::placeholder {
+                    color: #aaa; /* Placeholder text color */
+                    font-style: italic; /* Italicize placeholder text */
+                }
+            """)
 
             name_label = QLabel(f"{player} : ")
             name_label.setFont(font)
             name_input.setPlaceholderText(f"{player}")
-            #name_input.setFont(font)  # Set font for QLineEdit
-            #name_input.setStyleSheet("QLineEdit { padding: 10px; border: 1px solid #ccc; border-radius: 5px; }")
             form_layout.addRow(name_label, name_input)
             self.name_inputs.append(name_input)  # Keep track of input fields
 
@@ -98,27 +95,73 @@ class QuadrantWindow(QWidget):
             }
         """)
         submit_button.setFixedSize(120, 40)
-        button_layout = QHBoxLayout()
-        button_layout.addWidget(submit_button, alignment=Qt.AlignCenter)
+
+        # Connect the submit button to the submit function
+        submit_button.clicked.connect(self.submit_data)
 
         # Add the submit button to the layout
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(submit_button, alignment=Qt.AlignCenter)
         form_layout.addRow(button_layout)
-        form_widget = QWidget()
-        form_widget.setLayout(form_layout)
-        form_widget.setFixedSize(600, 500)  # Fixed size for the form layout
-        self.grid_layout.addWidget(form_widget, 0, 0)
+        self.left_layout.addLayout(form_layout)
 
-    def scoreArea(self):
-        label1 = QLabel("ScoreBoard")
-        #label1.setAlignment(Qt.AlignCenter)
-        label1.setStyleSheet("font-size: 18px; background-color: #8B0000; padding: 20px; border: 1px solid #ccc; border-radius: 10px;")
-        self.grid_layout.addWidget(label1, 0, 1)  # Row 0, Column 1
+    def scoreboard(self):
+        left_label = QLabel("This is a label below the form.")
+        self.left_layout.addWidget(left_label)
 
+    def totalScore(self):
+        table_widget = QTableWidget()
+        table_widget.setColumnCount(8)  # Number of columns
+        table_widget.setRowCount(0)      # Start with zero rows
+        table_widget.setHorizontalHeaderLabels(['Kausar', 'abc', '5', '6', '9', '8', '9', '9'])
 
+        # Make the table scrollable
+        table_widget.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        table_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
 
+        # Set table properties
+        table_widget.horizontalHeader().setStretchLastSection(True)
+        table_widget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        # Add the table widget to the splitter
+        self.splitter.addWidget(table_widget)
+
+        return table_widget
+
+    def submit_data(self):
+        # Retrieve data from input fields
+        row_data = [input_field.text() for input_field in self.name_inputs]
+
+        # Add the row data to the table
+        current_row_count = self.table_widget.rowCount()
+        self.table_widget.insertRow(current_row_count)
+        
+        for column, data in enumerate(row_data):
+            self.table_widget.setItem(current_row_count, column, QTableWidgetItem(data))
+
+        # Save the data to an Excel file
+        self.save_to_excel(row_data)
+
+    def save_to_excel(self, row_data):
+        # Define the Excel file path
+        excel_file = 'scoreboard.xlsx'
+        
+        # Check if the file exists
+        if os.path.exists(excel_file):
+            # Read existing data from the Excel file
+            df_existing = pd.read_excel(excel_file, header=None)
+            # Append the new data to the existing DataFrame
+            new_row = pd.DataFrame([row_data])
+            df = pd.concat([df_existing, new_row], ignore_index=True)
+        else:
+            # Create a new DataFrame with the new row
+            df = pd.DataFrame([row_data])
+
+        # Save the updated DataFrame to the Excel file
+        df.to_excel(excel_file, index=False, header=False)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = QuadrantWindow()
+    window = MainWindow()
     window.show()
     sys.exit(app.exec_())
