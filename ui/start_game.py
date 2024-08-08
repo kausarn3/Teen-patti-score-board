@@ -45,7 +45,7 @@ class SecondWindow(QWidget):
 
         # Set the window title and size
         self.setWindowTitle("Score Board")
-        self.resize(800, 600)
+        self.resize(1000, 650)
 
     def playArea(self):
         form_layout = QFormLayout()
@@ -116,28 +116,44 @@ class SecondWindow(QWidget):
         self.total_score_table.setRowCount(len(self.selected_players))  # Number of rows
         self.total_score_table.setColumnCount(2)  # Number of columns
         self.total_score_table.setHorizontalHeaderLabels(["Name", "Score"])
+        self.total_score_table.horizontalHeader().setStyleSheet("QHeaderView::section { font-weight: bold; font-size: 14pt; }")
         # Fill the table with example data
-        for i in enumerate(result):
+        for i in enumerate(result):  
             score = i[1][1]
             name = i[1][0]
+            name_item = QTableWidgetItem(name)
+            score_item = QTableWidgetItem(str(score))            
+            font = QFont()
+            font.setBold(True)
+            name_item.setFont(font)            
+            score_item.setFont(font)
+            if i[0] == 0:
+                score_item.setBackground(QColor(200, 255, 200))
+                name_item.setBackground(QColor(200, 255, 200))
+            elif len(result)-1 == i[0]:
+                 score_item.setBackground(QColor(255, 200, 200))
+                 name_item.setBackground(QColor(255, 200, 200))            
+
             #self.total_score_table.setItem(i[0], 0, QTableWidgetItem(str(i[0] + 1)))  # Rank
-            self.total_score_table.setItem(i[0], 0, QTableWidgetItem(f"{name}"))  # Name
-            self.total_score_table.setItem(i[0], 1, QTableWidgetItem(f"{score}"))  # Score
+            self.total_score_table.setItem(i[0], 0, name_item)  # Name
+            self.total_score_table.setItem(i[0], 1, score_item)  # Score
         
     def totalScore(self):
         table_widget = QTableWidget()
         table_widget.setColumnCount(len(self.selected_players))  # Number of columns
         table_widget.setRowCount(0)      # Start with zero rows
         table_widget.setHorizontalHeaderLabels(self.selected_players)
+        table_widget.horizontalHeader().setStyleSheet("QHeaderView::section { font-weight: bold; font-size: 14pt; }")
 
-        # Make the table scrollable
+
+        # # Make the table scrollable
         table_widget.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         table_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
 
         # Set table properties
         table_widget.horizontalHeader().setStretchLastSection(True)
         table_widget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-
+        
         # Add the table widget to the splitter
         self.splitter.addWidget(table_widget)
 
@@ -199,3 +215,7 @@ class SecondWindow(QWidget):
         result = [str(sum_values) if value == '' else str(-int(value)) for value in scores]
         return result
     
+# app = QApplication(sys.argv)
+# second_window = SecondWindow(["a","B","c","d","e"])
+# second_window.show()
+# sys.exit(app.exec_())

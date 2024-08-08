@@ -71,7 +71,19 @@ class PlayerNameApp(QWidget):
         #self.start_game_button.setDisabled(True)
         self.start_game_button.setMinimumHeight(50)  # Increase height
         self.start_game_button.setMinimumWidth(200)   # Increase width
-        self.start_game_button.setStyleSheet("font-size: 20px;")  # Set font size
+        self.start_game_button.setStyleSheet("""
+            QPushButton {
+                background-color: #4CAF50;  /* Green */
+                color: white;
+                padding: 10px;
+                border: none;
+                border-radius: 5px;
+                font-size: 20px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+        """)  # Set font size
         main_layout.addWidget(self.start_game_button, alignment=Qt.AlignCenter)  # Add to main layout with center alignment
         self.start_game_button.clicked.connect(self.start_game)
 
@@ -100,21 +112,7 @@ class PlayerNameApp(QWidget):
 
     def edit_player(self):
         # If we are not currently editing, find the checked checkbox
-        if not self.current_editing_checkbox:
-            for checkbox in self.player_checkboxes:
-                if checkbox.isChecked():
-                    # Load the name into the input for editing
-                    self.player_name_input.setText(checkbox.text())
-                    self.current_editing_checkbox = checkbox  # Track the checkbox being edited
-                    checkbox.setChecked(False)  # Uncheck the checkbox after loading
-                    return
-        else:
-            # We are in editing mode, update the checkbox name
-            new_name = self.player_name_input.text()
-            if new_name:  # Only update if input is not empty
-                self.current_editing_checkbox.setText(new_name)  # Update the checkbox with the new name
-                self.player_name_input.clear()  # Clear the input
-                self.current_editing_checkbox = None  # Reset editing state
+        pass
 
     def start_game(self):
         selected_player = [i.text() for i in self.Allplayer_checkboxes if i.isChecked()]
