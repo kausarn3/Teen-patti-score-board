@@ -4,7 +4,7 @@ import os
 from PyQt5.QtWidgets import (
     QWidget, QLabel, QLineEdit, QPushButton, QFormLayout,
     QHBoxLayout, QSplitter, QVBoxLayout, QApplication, QTableWidget,
-    QHeaderView, QTableWidgetItem
+    QHeaderView, QTableWidgetItem, QStackedWidget
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QColor
@@ -25,7 +25,13 @@ class SecondWindow(QWidget):
 
         # Initialize components for the left part
         self.playArea()
-        self.scoreboard()
+
+        self.leaderboard_page = QWidget()
+        self.leaderboard_layout = QVBoxLayout(self.leaderboard_page)
+        # Sample player data
+        self.total_score_table = QTableWidget()
+
+        self.total_game_score = [0 for i in range(len(selected_players))]
 
         # Add widgets to the splitter
         self.splitter.addWidget(left_widget)
@@ -103,10 +109,21 @@ class SecondWindow(QWidget):
         form_layout.addRow(button_layout)
         self.left_layout.addLayout(form_layout)
 
-    def scoreboard(self):
-        left_label = QLabel("This is a label below the form.")
-        self.left_layout.addWidget(left_label)
-
+    def scoreboard(self, data):
+        result = dict(zip(self.selected_players, data))
+        result = sorted(result.items(), key=lambda item: item[1], reverse=True)
+        # Setup table dimensions
+        self.total_score_table.setRowCount(len(self.selected_players))  # Number of rows
+        self.total_score_table.setColumnCount(2)  # Number of columns
+        self.total_score_table.setHorizontalHeaderLabels(["Name", "Score"])
+        # Fill the table with example data
+        for i in enumerate(result):
+            score = i[1][1]
+            name = i[1][0]
+            #self.total_score_table.setItem(i[0], 0, QTableWidgetItem(str(i[0] + 1)))  # Rank
+            self.total_score_table.setItem(i[0], 0, QTableWidgetItem(f"{name}"))  # Name
+            self.total_score_table.setItem(i[0], 1, QTableWidgetItem(f"{score}"))  # Score
+        
     def totalScore(self):
         table_widget = QTableWidget()
         table_widget.setColumnCount(len(self.selected_players))  # Number of columns
@@ -148,32 +165,37 @@ class SecondWindow(QWidget):
             font.setBold(True)
             item.setFont(font)
             self.table_widget.setItem(current_row_count, column, item)
-
+        
+        
         # Save the data to an Excel file
         self.save_to_excel(row_data)
+        total_score = [x + int(y) for x,y in zip(self.total_game_score, row_data)]
+        self.total_game_score = total_score
+        self.scoreboard(total_score)
+        self.leaderboard_layout.addWidget(self.total_score_table)
+        self.left_layout.addWidget(self.leaderboard_page)
         for input_field in self.name_inputs:
             input_field.clear()
 
     def save_to_excel(self, row_data):
         # Define the Excel file path
         excel_file = 'scoreboard.xlsx'
-        
         # Check if the file exists
         if os.path.exists(excel_file):
             # Read existing data from the Excel file
-            df_existing = pd.read_excel(excel_file, header=None)
+            df_existing = pd.read_excel(excel_file)
             # Append the new data to the existing DataFrame
-            new_row = pd.DataFrame([row_data])
+            new_row = pd.DataFrame([row_data], columns=self.selected_players)
             df = pd.concat([df_existing, new_row], ignore_index=True)
         else:
             # Create a new DataFrame with the new row
-            df = pd.DataFrame([row_data])
+            df = pd.DataFrame([row_data], columns=self.selected_players)
 
         # Save the updated DataFrame to the Excel file
-        df.to_excel(excel_file, index=False, header=False)
+        df.to_excel(excel_file, index=False)
 
     def ret_calculated_value(self, scores):
-
         sum_values = sum(int(value) for value in scores if value)
         result = [str(sum_values) if value == '' else str(-int(value)) for value in scores]
         return result
+    

@@ -4,15 +4,17 @@ import os
 from PyQt5.QtWidgets import (
     QWidget, QLabel, QLineEdit, QPushButton, QFormLayout,
     QHBoxLayout, QSplitter, QVBoxLayout, QApplication, QTableWidget,
-    QHeaderView, QTableWidgetItem
+    QHeaderView, QTableWidgetItem, QStackedWidget
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QColor
 
-class MainWindow(QWidget):
-    def __init__(self):
+
+class SecondWindow(QWidget):
+    def __init__(self, selected_players):
         super().__init__()
-
+        self.selected_players = selected_players
+        
         # Create a vertical splitter
         self.splitter = QSplitter(Qt.Horizontal)
 
@@ -23,14 +25,11 @@ class MainWindow(QWidget):
 
         # Initialize components for the left part
         self.playArea()
-        self.scoreboard()
 
         # Add widgets to the splitter
         self.splitter.addWidget(left_widget)
         # Create the right part with the scoreboard
-        self.table_widget = self.totalScore()
-
-        
+        self.table_widget = self.totalScore()        
 
         # Set the main layout
         main_layout = QVBoxLayout()
@@ -38,18 +37,16 @@ class MainWindow(QWidget):
         self.setLayout(main_layout)
 
         # Set the window title and size
-        self.setWindowTitle("Split Layout Example")
+        self.setWindowTitle("Score Board")
         self.resize(800, 600)
 
     def playArea(self):
         form_layout = QFormLayout()
         font = QFont("Arial", 12)
-
-        # Store input fields for later use
-        self.name_inputs = []
-        selected_players = ['Kausar', 'abc', 5, 6, 9, 8, 9, 9]
-
-        for player in selected_players:
+        submit_button = QPushButton("Submit")
+        # Add rows to the form layout
+        self.name_inputs = []  # Store input fields for later use
+        for player in self.selected_players:
             name_input = QLineEdit()
             name_input.setStyleSheet("""
                 QLineEdit {
@@ -105,15 +102,32 @@ class MainWindow(QWidget):
         form_layout.addRow(button_layout)
         self.left_layout.addLayout(form_layout)
 
-    def scoreboard(self):
-        left_label = QLabel("This is a label below the form.")
-        self.left_layout.addWidget(left_label)
+    def scoreboard(self, data):
+        leaderboard_page = QWidget()
+        leaderboard_layout = QVBoxLayout(leaderboard_page)
+        # Sample player data
+        table_widget = QTableWidget()
+        players = list(data.columns)
+        # Setup table dimensions
+        table_widget.setRowCount(len(players))  # Number of rows
+        table_widget.setColumnCount(3)  # Number of columns
+        table_widget.setHorizontalHeaderLabels(["Rank", "Name", "Score"])
+        # Fill the table with example data
+        for i, player in enumerate(players):
+            table_widget.setItem(i, 0, QTableWidgetItem(str(i + 1)))  # Rank
+            table_widget.setItem(i, 1, QTableWidgetItem(f"Player {player}"))  # Name
+            table_widget.setItem(i, 2, QTableWidgetItem(f"Score {i + 1}"))  # Score
+
+        leaderboard_layout.addWidget(table_widget)
+        self.left_layout.addWidget(leaderboard_page)
+            
+
 
     def totalScore(self):
         table_widget = QTableWidget()
-        table_widget.setColumnCount(8)  # Number of columns
+        table_widget.setColumnCount(len(self.selected_players))  # Number of columns
         table_widget.setRowCount(0)      # Start with zero rows
-        table_widget.setHorizontalHeaderLabels(['Kausar', 'abc', '5', '6', '9', '8', '9', '9'])
+        table_widget.setHorizontalHeaderLabels(self.selected_players)
 
         # Make the table scrollable
         table_widget.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
@@ -131,37 +145,53 @@ class MainWindow(QWidget):
     def submit_data(self):
         # Retrieve data from input fields
         row_data = [input_field.text() for input_field in self.name_inputs]
+        row_data = self.ret_calculated_value(row_data)
+        winner = max([int(i)for i in row_data])
+        looser = min([int(i)for i in row_data])
 
         # Add the row data to the table
         current_row_count = self.table_widget.rowCount()
         self.table_widget.insertRow(current_row_count)
         
         for column, data in enumerate(row_data):
-            self.table_widget.setItem(current_row_count, column, QTableWidgetItem(data))
-
+            item = QTableWidgetItem(data)
+            if int(data) == winner:
+                item.setBackground(QColor(200, 255, 200))
+            elif int(data) == looser:
+                item.setBackground(QColor(255, 200, 200))
+            
+            font = QFont()
+            font.setBold(True)
+            item.setFont(font)
+            self.table_widget.setItem(current_row_count, column, item)
+        
+        
         # Save the data to an Excel file
-        self.save_to_excel(row_data)
+        df = self.save_to_excel(row_data)
+        self.scoreboard(df)
+        for input_field in self.name_inputs:
+            input_field.clear()
 
     def save_to_excel(self, row_data):
         # Define the Excel file path
         excel_file = 'scoreboard.xlsx'
-        
         # Check if the file exists
         if os.path.exists(excel_file):
             # Read existing data from the Excel file
-            df_existing = pd.read_excel(excel_file, header=None)
+            df_existing = pd.read_excel(excel_file)
             # Append the new data to the existing DataFrame
-            new_row = pd.DataFrame([row_data])
+            new_row = pd.DataFrame([row_data], columns=self.selected_players)
             df = pd.concat([df_existing, new_row], ignore_index=True)
         else:
             # Create a new DataFrame with the new row
-            df = pd.DataFrame([row_data])
+            df = pd.DataFrame([row_data], columns=self.selected_players)
 
         # Save the updated DataFrame to the Excel file
-        df.to_excel(excel_file, index=False, header=False)
+        df.to_excel(excel_file, index=False)
+        return df
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_())
+    def ret_calculated_value(self, scores):
+        sum_values = sum(int(value) for value in scores if value)
+        result = [str(sum_values) if value == '' else str(-int(value)) for value in scores]
+        return result
+    
